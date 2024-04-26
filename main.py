@@ -15,7 +15,7 @@ import json
 import logging
 import time
 from argparse import ArgumentParser
-locked = []
+
 
 """
 A FUSE filesystem that uses Telegram as a backend.
@@ -109,7 +109,6 @@ class TelegramFUSE(Operations):
         print(files)
         return files
     def open(self, path, fi):
-        super().open(path, fi)
         if not path in db[0]: raise FuseOSError(ENOENT)
         return 0
     def read(self, path, size, offset, fh):
@@ -118,17 +117,14 @@ class TelegramFUSE(Operations):
         return v
 
     def write(self, path, data, offset, fh=None):
-        global locked
-        if path in locked:
-            raise FuseOSError(16)
         
         if path not in db[0]: raise FuseOSError(ENOENT)
-        locked.append(path)
+
         if path not in self.buffers:
             self.buffers[path] = (getiofrompath(path).getvalue() if path in db[0].keys() else b'')
         
         self.buffers[path] = (self.buffers[path][:offset] if offset > 0 else self.buffers[path]) + data + (self.buffers[path][offset + len(data):] if offset + len(data) < len(self.buffers[path]) else b'')
-        locked.remove(path)
+
         return len(data)
 
     def create(self, path, fi=None):
@@ -143,8 +139,6 @@ class TelegramFUSE(Operations):
         return 0
 
     def unlink(self, path):
-        if path in locked:
-            raise FuseOSError(16)
         if path in db[0]:
             del db[0][path]
         else:
@@ -159,8 +153,6 @@ class TelegramFUSE(Operations):
         return 0
 
     def rename(self, old, new):
-        if old in locked:
-            raise FuseOSError(16)
         if old in db[0]:
             db[0][new] = db[0][old]
             del db[0][old]
@@ -178,7 +170,7 @@ class TelegramFUSE(Operations):
         return 0
 
     def chmod(self, path):
-        raise NotImplementedError('chmod not implemented (never will be)')
+        raise NotImplementedError('chown not implemented (never will be)')
 
     def chown(self, path):
         raise NotImplementedError('chown not implemented (never will be)')
@@ -196,8 +188,6 @@ class TelegramFUSE(Operations):
     
     def release(self, path):
         # Also upload the file when it's released, in case it wasn't flushed
-        global locked
-        locked.remove(path)
         if path in self.buffers:
             writepath(path, self.buffers[path])
             del self.buffers[path]
@@ -222,11 +212,6 @@ class TelegramFUSE(Operations):
         return 0
     def release(self, path, fh):
         # Also upload the file when it's released, in case it wasn't flushed
-        global locked
-        try:
-            locked.remove(path)
-        except ValueError:
-            pass
         if path in self.buffers:
             writepath(path, self.buffers[path])
             del self.buffers[path]
