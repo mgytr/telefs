@@ -25,7 +25,7 @@ python3 main.py --mount <mountpoint> [--background] [--debug]
 - [x] Delete files & directories
 - [x] List files & directories
 - [x] Move files & directories
-- [x] File locking
+- [ ] File locking
 - [ ] Metadata
 
 ## Never Features
