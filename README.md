@@ -13,7 +13,7 @@ sudo apt install fuse libfuse-dev # or equivalent
 ## Usage
 
 ```bash
-python3 main.py --mount <mountpoint> [--background] [--debug]
+python3 main.py --mount <mountpoint> [--background]
 ```
 
 ## Features
