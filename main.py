@@ -127,7 +127,7 @@ class TelegramFUSE(Operations):
 
         return len(data)
 
-    def create(self, path, fi=None):
+    def create(self, path, mode=None, fi=None):
         if path in db[0].keys(): raise FuseOSError(ENOENT)
         db[0][path] = None
         return 0
@@ -235,12 +235,8 @@ if __name__ == '__main__':
     argparser = ArgumentParser()
 
     argparser.add_argument('--mount', type=str, help='Path to mountpoint', required=True)
-    argparser.add_argument('--background', action='store_true', help='Run in background (daemon mode) (can\'t be used with --debug)')
-    argparser.add_argument('--debug', action='store_true', help='Debug mode (can\'t be used with --background)')
+    argparser.add_argument('--debug', action='store_true', help='Debug mode')
 
     args = argparser.parse_args()
 
-    if args.background and args.debug:
-        argparser.error("--background and --debug can't be used at the same time")
-
-    Mount(args.mount, foreground=not args.background, debug=args.debug)
+    Mount(args.mount, debug=args.debug, allow_other=True, raw_fi=True, foreground=True)
